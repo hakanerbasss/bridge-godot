@@ -13,10 +13,15 @@ jobs:
 
       - name: Setup env
         run: |
-          mkdir -p ~/.config/godot
-          mkdir -p ~/.local/share/godot/export_templates/4.2.stable
-          cp -rv /root/.local/share/godot/export_templates/4.2.stable/* ~/.local/share/godot/export_templates/4.2.stable/ || true
-          cp editor_settings-4.2.tres ~/.config/godot/editor_settings-4.2.tres
+          mkdir -p $HOME/.config/godot
+          mkdir -p $HOME/.local/share/godot/export_templates/4.2.2.stable
+          cp -rv /root/.local/share/godot/export_templates/4.2.2.stable/* $HOME/.local/share/godot/export_templates/4.2.2.stable/ || true
+          cp editor_settings-4.2.tres $HOME/.config/godot/editor_settings-4.2.tres
+          echo "HOME=$HOME"
+          echo "Templates:"
+          ls $HOME/.local/share/godot/export_templates/4.2.2.stable/ | head -5
+          echo "Settings:"
+          cat $HOME/.config/godot/editor_settings-4.2.tres
 
       - name: Import project
         run: godot --headless --editor --quit 2>&1 || true
