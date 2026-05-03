@@ -13,29 +13,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install JDK and find path
-        run: |
-          apt-get update -qq && apt-get install -y -qq openjdk-17-jdk
-          JAVA_HOME_PATH=$(dirname $(dirname $(readlink -f $(which javac))))
-          echo "JAVA_HOME_PATH=$JAVA_HOME_PATH" >> $GITHUB_ENV
-          echo "JDK path: $JAVA_HOME_PATH"
-          ls $JAVA_HOME_PATH/bin/javac
+      - name: Install JDK
+        run: apt-get update -qq && apt-get install -y -qq openjdk-17-jdk
 
-      - name: Setup templates and editor settings
+      - name: Setup
         run: |
           mkdir -p $HOME/.config/godot
           mkdir -p $HOME/.local/share/godot/export_templates
           cp -r /root/.local/share/godot/export_templates/* $HOME/.local/share/godot/export_templates/
-          SETTINGS="$HOME/.config/godot/editor_settings-4.2.tres"
+          SETTINGS="$HOME/.config/godot/editor_settings-4.tres"
           echo '[gd_resource type="EditorSettings" format=3]' > $SETTINGS
           echo '' >> $SETTINGS
           echo '[resource]' >> $SETTINGS
-          echo "export/android/java_sdk_path = \"$JAVA_HOME_PATH\"" >> $SETTINGS
+          echo 'export/android/java_sdk_path = "/usr/lib/jvm/java-17-openjdk-amd64"' >> $SETTINGS
           echo 'export/android/android_sdk_path = "/usr/lib/android-sdk"' >> $SETTINGS
           echo 'export/android/debug_keystore = "/root/debug.keystore"' >> $SETTINGS
           echo 'export/android/debug_keystore_user = "androiddebugkey"' >> $SETTINGS
           echo 'export/android/debug_keystore_pass = "android"' >> $SETTINGS
-          cat $SETTINGS
+          echo "=== Settings ===" && cat $SETTINGS
+          echo "=== Java ===" && ls /usr/lib/jvm/java-17-openjdk-amd64/bin/javac
 
       - name: Export APK
         run: |
