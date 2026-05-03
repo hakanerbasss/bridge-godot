@@ -11,19 +11,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install full JDK
+        run: |
+          apt-get update -qq && apt-get install -y -qq openjdk-17-jdk
+          JAVA_PATH=$(dirname $(dirname $(readlink -f $(which javac))))
+          echo "JAVA_PATH=$JAVA_PATH" >> $GITHUB_ENV
+          echo "javac: $JAVA_PATH/bin/javac"
+          ls $JAVA_PATH/bin/javac
+
       - name: Setup env
         run: |
-          echo "HOME=$HOME"
-          echo "whoami=$(whoami)"
-          JAVA_PATH=$(dirname $(dirname $(readlink -f $(which java))))
-          echo "Java: $JAVA_PATH"
-          ls $JAVA_PATH/bin/javac || echo "JAVAC YOK!"
           mkdir -p $HOME/.local/share/godot/export_templates/4.2.2.stable
           cp -r /root/.local/share/godot/export_templates/4.2.2.stable/* $HOME/.local/share/godot/export_templates/4.2.2.stable/ || true
-          mkdir -p $HOME/.config/godot
-          mkdir -p /root/.config/godot
+          mkdir -p $HOME/.config/godot /root/.config/godot
           printf '[gd_resource type="EditorSettings" format=3]\n\n[resource]\nexport/android/java_sdk_path = "%s"\nexport/android/android_sdk_path = "/usr/lib/android-sdk"\nexport/android/debug_keystore = "/root/debug.keystore"\nexport/android/debug_keystore_user = "androiddebugkey"\nexport/android/debug_keystore_pass = "android"\n' "$JAVA_PATH" | tee $HOME/.config/godot/editor_settings-4.2.tres /root/.config/godot/editor_settings-4.2.tres
-          chattr +i $HOME/.config/godot/editor_settings-4.2.tres /root/.config/godot/editor_settings-4.2.tres 2>/dev/null || true
+          chmod 444 $HOME/.config/godot/editor_settings-4.2.tres /root/.config/godot/editor_settings-4.2.tres
 
       - name: Build APK
         run: |
