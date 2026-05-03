@@ -32,25 +32,14 @@ jobs:
           echo 'export/android/debug_keystore = "/root/debug.keystore"' >> $SETTINGS
           echo 'export/android/debug_keystore_user = "androiddebugkey"' >> $SETTINGS
           echo 'export/android/debug_keystore_pass = "android"' >> $SETTINGS
-          echo "--- adb ---"
-          ls /usr/lib/android-sdk/platform-tools/adb || echo "ADB YOK"
-          echo "--- build-tools ---"
-          ls /usr/lib/android-sdk/build-tools/
-          echo "--- apksigner ---"
-          ls /usr/lib/android-sdk/build-tools/33.0.2/apksigner || echo "APKSIGNER YOK"
-          echo "--- keystore ---"
-          ls /root/debug.keystore || echo "KEYSTORE YOK"
 
       - name: Export APK
         run: |
           mkdir -p build/android
           godot --headless --verbose --path $PWD --export-debug "Android" $PWD/build/android/bridge-builder.apk > /tmp/godot.log 2>&1 || true
-          echo "=== SON 30 SATIR ==="
-          tail -30 /tmp/godot.log
-          echo "=== HATALAR ==="
-          grep -i "error\|missing\|invalid\|cannot\|failed" /tmp/godot.log || true
+          cp /tmp/godot.log build/android/godot.log
 
       - uses: actions/upload-artifact@v4
         with:
-          name: bridge-builder-apk
-          path: build/android/bridge-builder.apk
+          name: build-output
+          path: build/android/
