@@ -6,40 +6,62 @@ on:
 
 jobs:
   export-android:
-    runs-on: ubuntu-latest
-    container:
-      image: barichello/godot-ci:4.2.2
+    runs-on: ubuntu-22.04
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install JDK
-        run: apt-get update -qq && apt-get install -y -qq openjdk-17-jdk
-
-      - name: Setup
+      - name: Install dependencies
         run: |
-          yes | sdkmanager --licenses || true
-          sdkmanager "platform-tools" "build-tools;33.0.2" "platforms;android-33" || true
-          mkdir -p $HOME/.config/godot
-          mkdir -p $HOME/.local/share/godot/export_templates
-          cp -r /root/.local/share/godot/export_templates/* $HOME/.local/share/godot/export_templates/
-          SETTINGS="$HOME/.config/godot/editor_settings-4.tres"
+          sudo apt-get update -qq
+          sudo apt-get install -y wget unzip openjdk-17-jdk
+
+      - name: Install Godot
+        run: |
+          wget -q https://github.com/godotengine/godot/releases/download/4.2.2-stable/Godot_v4.2.2-stable_linux.x86_64.zip
+          unzip -q Godot_v4.2.2-stable_linux.x86_64.zip
+          chmod +x Godot_v4.2.2-stable_linux.x86_64
+          sudo mv Godot_v4.2.2-stable_linux.x86_64 /usr/local/bin/godot
+
+      - name: Install export templates
+        run: |
+          mkdir -p ~/.local/share/godot/export_templates/4.2.2.stable
+          wget -q https://github.com/godotengine/godot/releases/download/4.2.2-stable/Godot_v4.2.2-stable_export_templates.tpz
+          unzip -q Godot_v4.2.2-stable_export_templates.tpz -d /tmp/templates
+          mv /tmp/templates/templates/* ~/.local/share/godot/export_templates/4.2.2.stable/
+
+      - name: Install Android SDK
+        run: |
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          mkdir -p ~/android-sdk/cmdline-tools
+          unzip -q commandlinetools-linux-11076708_latest.zip -d ~/android-sdk/cmdline-tools
+          mv ~/android-sdk/cmdline-tools/cmdline-tools ~/android-sdk/cmdline-tools/latest
+          export ANDROID_SDK_ROOT=~/android-sdk
+          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
+          yes | sdkmanager --licenses
+          sdkmanager "platform-tools" "build-tools;33.0.2" "platforms;android-33"
+          keytool -genkey -v -keystore ~/debug.keystore -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=Android Debug,O=Android,C=US"
+
+      - name: Setup Godot editor settings
+        run: |
+          mkdir -p ~/.config/godot
+          SETTINGS=~/.config/godot/editor_settings-4.tres
           echo '[gd_resource type="EditorSettings" format=3]' > $SETTINGS
           echo '' >> $SETTINGS
           echo '[resource]' >> $SETTINGS
-          echo 'export/android/java_sdk_path = "/usr/lib/jvm/java-17-openjdk-amd64"' >> $SETTINGS
-          echo 'export/android/android_sdk_path = "/usr/lib/android-sdk"' >> $SETTINGS
-          echo 'export/android/debug_keystore = "/root/debug.keystore"' >> $SETTINGS
+          echo "export/android/java_sdk_path = \"/usr/lib/jvm/java-17-openjdk-amd64\"" >> $SETTINGS
+          echo "export/android/android_sdk_path = \"$HOME/android-sdk\"" >> $SETTINGS
+          echo "export/android/debug_keystore = \"$HOME/debug.keystore\"" >> $SETTINGS
           echo 'export/android/debug_keystore_user = "androiddebugkey"' >> $SETTINGS
           echo 'export/android/debug_keystore_pass = "android"' >> $SETTINGS
+          cat $SETTINGS
 
       - name: Export APK
         run: |
           mkdir -p build/android
-          godot --headless --verbose --path $PWD --export-debug "Android" $PWD/build/android/bridge-builder.apk > /tmp/godot.log 2>&1 || true
-          cp /tmp/godot.log build/android/godot.log
+          godot --headless --verbose --export-debug "Android" $PWD/build/android/bridge-builder.apk 2>&1
 
       - uses: actions/upload-artifact@v4
         with:
-          name: build-output
-          path: build/android/
+          name: bridge-builder-apk
+          path: build/android/bridge-builder.apk
