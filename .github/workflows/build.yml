@@ -10,6 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: barichello/godot-ci:4.3
+      env:
+        ANDROID_HOME: /usr/lib/android-sdk
+        ANDROID_SDK_ROOT: /usr/lib/android-sdk
 
     steps:
       - uses: actions/checkout@v4
@@ -23,19 +26,18 @@ jobs:
              ~/.local/share/godot/export_templates/4.3.stable
           echo 'export/android/java_sdk_path = "/usr/lib/jvm/java-17-openjdk-amd64"' \
              >> ~/.config/godot/editor_settings-4.3.tres
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          ls $ANDROID_HOME/build-tools/
 
       - name: Import
         run: godot --headless --editor --quit 2>&1 || true
 
       - name: Build APK
         run: |
-          echo "SDK:" && ls /usr/lib/android-sdk/build-tools/ && echo "ANDROID_HOME:" && echo $ANDROID_HOME && mkdir -p build/android
+          mkdir -p build/android
           godot --headless --verbose \
             --export-debug "Android" \
-            build/android/bridge-builder.apk > /tmp/godot_log.txt 2>&1 || true
-          echo "=== FULL LOG ==="
-          cat /tmp/godot_log.txt
-          echo "=== APK CHECK ==="
+            build/android/bridge-builder.apk 2>&1
           ls -la build/android/ || echo "No APK"
 
       - name: Upload APK
