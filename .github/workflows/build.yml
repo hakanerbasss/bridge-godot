@@ -51,20 +51,13 @@ jobs:
           echo "export/android/debug_keystore = \"$HOME/debug.keystore\"" >> $SETTINGS
           echo 'export/android/debug_keystore_user = "androiddebugkey"' >> $SETTINGS
           echo 'export/android/debug_keystore_pass = "android"' >> $SETTINGS
-          echo "=== SETTINGS ===" && cat $SETTINGS
-          echo "=== JAVA ===" && ls $JAVA_HOME/bin/javac
-          echo "=== BUILD-TOOLS ===" && ls $HOME/android-sdk/build-tools/
-          echo "=== ADB ===" && ls $HOME/android-sdk/platform-tools/adb
-          echo "=== KEYSTORE ===" && ls $HOME/debug.keystore
-          echo "=== TEMPLATES ===" && ls ~/.local/share/godot/export_templates/4.2.2.stable/ | grep android
-          echo "=== PROJECT ===" && ls && cat export_presets.cfg | head -20
 
       - name: Export APK
         run: |
           mkdir -p build/android
-          godot --headless --verbose --export-debug "Android" build/android/bridge-builder.apk 2>&1
+          godot --headless --path $PWD --export-debug "Android" build/android/bridge-builder.apk 2>&1
 
       - uses: actions/upload-artifact@v4
         with:
-          name: build-output
-          path: build/android/
+          name: bridge-builder-apk
+          path: build/android/bridge-builder.apk
