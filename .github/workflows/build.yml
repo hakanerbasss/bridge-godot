@@ -12,6 +12,15 @@ jobs:
       image: barichello/godot-ci:4.2.2
 
     steps:
+      - name: Setup Godot Editor Settings
+        run: |
+          mkdir -p $HOME/.config/godot
+          printf "[gd_resource type=EditorSettings format=3]
+
+[resource]
+export/android/android_sdk_path = /usr/lib/android-sdk
+export/android/java_sdk_path = /usr/lib/jvm/java-17-openjdk-amd64
+" > $HOME/.config/godot/editor_settings-4.tres
       - uses: actions/checkout@v4
 
       - name: Setup
