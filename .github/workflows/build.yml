@@ -1,49 +1,48 @@
 name: Build Android APK
-
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: [main]
   workflow_dispatch:
 
 jobs:
   export-android:
-    name: Export Android
     runs-on: ubuntu-latest
     container:
       image: barichello/godot-ci:4.2.2
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Environment & Install JDK
+      - name: Install JDK and find path
         run: |
-          apt-get update
-          apt-get install -y openjdk-17-jdk
+          apt-get update -qq && apt-get install -y -qq openjdk-17-jdk
+          JAVA_HOME_PATH=$(dirname $(dirname $(readlink -f $(which javac))))
+          echo "JAVA_HOME_PATH=$JAVA_HOME_PATH" >> $GITHUB_ENV
+          echo "JDK path: $JAVA_HOME_PATH"
+          ls $JAVA_HOME_PATH/bin/javac
+
+      - name: Setup templates and editor settings
+        run: |
           mkdir -p $HOME/.config/godot
           mkdir -p $HOME/.local/share/godot/export_templates
           cp -r /root/.local/share/godot/export_templates/* $HOME/.local/share/godot/export_templates/
-
-      - name: Configure Editor Settings
-        run: |
-          SETTINGS_FILE="$HOME/.config/godot/editor_settings-4.2.tres"
-          echo '[gd_resource type="EditorSettings" format=3]' > $SETTINGS_FILE
-          echo '' >> $SETTINGS_FILE
-          echo '[resource]' >> $SETTINGS_FILE
-          echo 'export/android/android_sdk_path = "/usr/lib/android-sdk"' >> $SETTINGS_FILE
-          echo 'export/android/debug_keystore = "/root/debug.keystore"' >> $SETTINGS_FILE
-          echo 'export/android/debug_keystore_user = "androiddebugkey"' >> $SETTINGS_FILE
-          echo 'export/android/debug_keystore_pass = "android"' >> $SETTINGS_FILE
-          echo 'export/android/force_system_user = false' >> $SETTINGS_FILE
-          echo 'export/android/java_sdk_path = "/usr/lib/jvm/java-17-openjdk-amd64"' >> $SETTINGS_FILE
+          SETTINGS="$HOME/.config/godot/editor_settings-4.2.tres"
+          echo '[gd_resource type="EditorSettings" format=3]' > $SETTINGS
+          echo '' >> $SETTINGS
+          echo '[resource]' >> $SETTINGS
+          echo "export/android/java_sdk_path = \"$JAVA_HOME_PATH\"" >> $SETTINGS
+          echo 'export/android/android_sdk_path = "/usr/lib/android-sdk"' >> $SETTINGS
+          echo 'export/android/debug_keystore = "/root/debug.keystore"' >> $SETTINGS
+          echo 'export/android/debug_keystore_user = "androiddebugkey"' >> $SETTINGS
+          echo 'export/android/debug_keystore_pass = "android"' >> $SETTINGS
+          cat $SETTINGS
 
       - name: Export APK
         run: |
           mkdir -p build/android
-          godot --headless --export-debug "Android" build/android/bridge-builder.apk
+          godot --headless --export-debug "Android" build/android/bridge-builder.apk 2>&1
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: bridge-builder-apk
           path: build/android/bridge-builder.apk
