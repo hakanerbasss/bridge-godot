@@ -39,7 +39,7 @@ jobs:
           ~/android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=$HOME/android-sdk "platform-tools" "build-tools;33.0.2" "platforms;android-33"
           keytool -genkey -v -keystore ~/debug.keystore -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=Android Debug,O=Android,C=US"
 
-      - name: Setup Godot editor settings
+      - name: Setup editor settings
         run: |
           mkdir -p ~/.config/godot
           SETTINGS=~/.config/godot/editor_settings-4.tres
@@ -51,14 +51,20 @@ jobs:
           echo "export/android/debug_keystore = \"$HOME/debug.keystore\"" >> $SETTINGS
           echo 'export/android/debug_keystore_user = "androiddebugkey"' >> $SETTINGS
           echo 'export/android/debug_keystore_pass = "android"' >> $SETTINGS
-          cat $SETTINGS
+          echo "=== SETTINGS ===" && cat $SETTINGS
+          echo "=== JAVA ===" && ls $JAVA_HOME/bin/javac
+          echo "=== BUILD-TOOLS ===" && ls $HOME/android-sdk/build-tools/
+          echo "=== ADB ===" && ls $HOME/android-sdk/platform-tools/adb
+          echo "=== KEYSTORE ===" && ls $HOME/debug.keystore
+          echo "=== TEMPLATES ===" && ls ~/.local/share/godot/export_templates/4.2.2.stable/ | grep android
+          echo "=== PROJECT ===" && ls && cat export_presets.cfg | head -20
 
       - name: Export APK
         run: |
           mkdir -p build/android
-          godot --headless --verbose --export-debug "Android" $PWD/build/android/bridge-builder.apk 2>&1
+          godot --headless --verbose --export-debug "Android" build/android/bridge-builder.apk 2>&1
 
       - uses: actions/upload-artifact@v4
         with:
-          name: bridge-builder-apk
-          path: build/android/bridge-builder.apk
+          name: build-output
+          path: build/android/
