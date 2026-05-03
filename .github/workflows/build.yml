@@ -23,23 +23,23 @@ jobs:
              ~/.local/share/godot/export_templates/4.3.stable
           echo 'export/android/java_sdk_path = "/usr/lib/jvm/java-17-openjdk-amd64"' \
              >> ~/.config/godot/editor_settings-4.3.tres
-          # apksigner kontrolu
-          find /usr/lib/android-sdk -name "apksigner" 2>/dev/null
-          java -version 2>&1
+
+      - name: Import project
+        run: |
+          godot --headless --editor --quit || true
+          sleep 3
 
       - name: Build APK
         run: |
           mkdir -p build/android
           godot --headless --verbose \
             --export-debug "Android" \
-            build/android/bridge-builder.apk 2>&1
-          ls -la build/android/ || echo "No APK generated"
+            build/android/bridge-builder.apk
+          ls -la build/android/
 
       - name: Upload APK
-        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: bridge-builder-apk
           path: build/android/bridge-builder.apk
-          if-no-files-found: warn
           retention-days: 30
