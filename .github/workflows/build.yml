@@ -28,26 +28,25 @@ jobs:
              ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
           echo 'export/android/java_sdk_path = "/usr/lib/jvm/java-17-openjdk-amd64"' \
              >> ~/.config/godot/editor_settings-4.3.tres
-          echo "HOME=$HOME"
-          cat ~/.config/godot/editor_settings-4.3.tres
 
-      - name: Import
-        run: godot --headless --editor --quit 2>&1 || true
-
-      - name: Build APK
-        env:
-          JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+      - name: Install Android template
         run: |
-          mkdir -p build/android
-          godot --headless --verbose \
-            --export-debug "Android" \
-            build/android/bridge-builder.apk 2>&1
-          ls -la build/android/ || echo "No APK"
+          mkdir -p android/build
+          cp ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/android_source.zip android/build/
+          cd android/build && unzip -q android_source.zip && rm android_source.zip
+          echo "installed" > android/.build_version
+
+      - name: Build with Gradle
+        run: |
+          cd android/build
+          chmod +x gradlew
+          ./gradlew assembleDebug
+          find . -name "*.apk" | head -5
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: bridge-builder-apk
-          path: build/android/bridge-builder.apk
+          path: android/build/build/outputs/apk/debug/*.apk
           retention-days: 30
           if-no-files-found: warn
