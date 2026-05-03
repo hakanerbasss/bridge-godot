@@ -11,16 +11,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install dependencies
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y wget unzip openjdk-17-jdk
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
 
       - name: Install Godot
         run: |
           wget -q https://github.com/godotengine/godot/releases/download/4.2.2-stable/Godot_v4.2.2-stable_linux.x86_64.zip
           unzip -q Godot_v4.2.2-stable_linux.x86_64.zip
-          chmod +x Godot_v4.2.2-stable_linux.x86_64
           sudo mv Godot_v4.2.2-stable_linux.x86_64 /usr/local/bin/godot
 
       - name: Install export templates
@@ -36,10 +35,8 @@ jobs:
           mkdir -p ~/android-sdk/cmdline-tools
           unzip -q commandlinetools-linux-11076708_latest.zip -d ~/android-sdk/cmdline-tools
           mv ~/android-sdk/cmdline-tools/cmdline-tools ~/android-sdk/cmdline-tools/latest
-          export ANDROID_SDK_ROOT=~/android-sdk
-          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
-          yes | sdkmanager --licenses
-          sdkmanager "platform-tools" "build-tools;33.0.2" "platforms;android-33"
+          yes | ~/android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=$HOME/android-sdk --licenses || true
+          ~/android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=$HOME/android-sdk "platform-tools" "build-tools;33.0.2" "platforms;android-33"
           keytool -genkey -v -keystore ~/debug.keystore -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=Android Debug,O=Android,C=US"
 
       - name: Setup Godot editor settings
@@ -49,7 +46,7 @@ jobs:
           echo '[gd_resource type="EditorSettings" format=3]' > $SETTINGS
           echo '' >> $SETTINGS
           echo '[resource]' >> $SETTINGS
-          echo "export/android/java_sdk_path = \"/usr/lib/jvm/java-17-openjdk-amd64\"" >> $SETTINGS
+          echo "export/android/java_sdk_path = \"$JAVA_HOME\"" >> $SETTINGS
           echo "export/android/android_sdk_path = \"$HOME/android-sdk\"" >> $SETTINGS
           echo "export/android/debug_keystore = \"$HOME/debug.keystore\"" >> $SETTINGS
           echo 'export/android/debug_keystore_user = "androiddebugkey"' >> $SETTINGS
