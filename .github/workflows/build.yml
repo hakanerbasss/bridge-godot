@@ -9,10 +9,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container:
-      image: barichello/godot-ci:4.3
-      env:
-        ANDROID_HOME: /usr/lib/android-sdk
-        ANDROID_SDK_ROOT: /usr/lib/android-sdk
+      image: barichello/godot-ci:4.2.2
 
     steps:
       - uses: actions/checkout@v4
@@ -22,12 +19,10 @@ jobs:
           mkdir -p ~/.local/share/godot/export_templates/
           mkdir -p ~/.config/
           mv /root/.config/godot ~/.config/godot
-          mv /root/.local/share/godot/export_templates/4.3.stable \
-             ~/.local/share/godot/export_templates/4.3.stable
+          mv /root/.local/share/godot/export_templates/4.2.2.stable \
+             ~/.local/share/godot/export_templates/4.2.2.stable
           echo 'export/android/java_sdk_path = "/usr/lib/jvm/java-17-openjdk-amd64"' \
-             >> ~/.config/godot/editor_settings-4.3.tres
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          ls $ANDROID_HOME/build-tools/
+             >> ~/.config/godot/editor_settings-4.2.tres
 
       - name: Import
         run: godot --headless --editor --quit 2>&1 || true
