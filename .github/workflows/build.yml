@@ -29,13 +29,21 @@ jobs:
              ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
           echo 'export/android/java_sdk_path = "/usr/lib/jvm/java-17-openjdk-amd64"' \
              >> ~/.config/godot/editor_settings-4.3.tres
+          echo "=== Editor Settings ==="
+          cat ~/.config/godot/editor_settings-4.3.tres
+          echo "=== Export Presets ==="
+          cat export_presets.cfg
+          echo "=== Android SDK ==="
+          ls /usr/lib/android-sdk/build-tools/ || echo "no build-tools"
+          ls /root/debug.keystore || echo "no keystore"
 
       - name: Build APK
         run: |
           mkdir -p build/android
           godot --headless --verbose \
             --export-debug "Android" \
-            build/android/bridge-builder.apk
+            build/android/bridge-builder.apk 2>&1 || true
+          echo "Exit: $?"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
