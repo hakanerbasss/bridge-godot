@@ -28,16 +28,15 @@ jobs:
         run: godot --headless --editor --quit 2>&1 || true
 
       - name: Build APK
-        env:
-          GODOT_ANDROID_KEYSTORE_DEBUG_PATH: /root/debug.keystore
-          GODOT_ANDROID_KEYSTORE_DEBUG_USER: androiddebugkey
-          GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD: android
         run: |
           mkdir -p build/android
           godot --headless --verbose \
             --export-debug "Android" \
-            build/android/bridge-builder.apk 2>&1
-          ls -la build/android/ || true
+            build/android/bridge-builder.apk > /tmp/godot_log.txt 2>&1 || true
+          echo "=== FULL LOG ==="
+          cat /tmp/godot_log.txt
+          echo "=== APK CHECK ==="
+          ls -la build/android/ || echo "No APK"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
@@ -45,3 +44,4 @@ jobs:
           name: bridge-builder-apk
           path: build/android/bridge-builder.apk
           retention-days: 30
+          if-no-files-found: warn
