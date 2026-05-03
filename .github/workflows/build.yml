@@ -24,18 +24,20 @@ jobs:
           echo 'export/android/java_sdk_path = "/usr/lib/jvm/java-17-openjdk-amd64"' \
              >> ~/.config/godot/editor_settings-4.3.tres
 
-      - name: Import project
-        run: |
-          godot --headless --editor --quit || true
-          sleep 3
+      - name: Import
+        run: godot --headless --editor --quit 2>&1 || true
 
       - name: Build APK
+        env:
+          GODOT_ANDROID_KEYSTORE_DEBUG_PATH: /root/debug.keystore
+          GODOT_ANDROID_KEYSTORE_DEBUG_USER: androiddebugkey
+          GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD: android
         run: |
           mkdir -p build/android
           godot --headless --verbose \
             --export-debug "Android" \
-            build/android/bridge-builder.apk
-          ls -la build/android/
+            build/android/bridge-builder.apk 2>&1
+          ls -la build/android/ || true
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
