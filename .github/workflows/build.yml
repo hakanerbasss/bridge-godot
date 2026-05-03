@@ -13,52 +13,15 @@ jobs:
 
       - name: Setup env
         run: |
-          JAVA_PATH=$(dirname $(dirname $(readlink -f $(which java))))
-          echo "Java: $JAVA_PATH"
-          mkdir -p $HOME/.config/godot
           mkdir -p $HOME/.local/share/godot/export_templates/4.2.2.stable
           cp -rv /root/.local/share/godot/export_templates/4.2.2.stable/* $HOME/.local/share/godot/export_templates/4.2.2.stable/ || true
-          python3 -c "
-import os
-p = os.environ.get('JAVA_PATH', '/usr/lib/jvm/java-17-openjdk-amd64')
-home = os.environ.get('HOME', '/github/home')
-lines = [
-  '[gd_resource type=\"EditorSettings\" format=3]',
-  '',
-  '[resource]',
-  'export/android/java_sdk_path = \"' + p + '\"',
-  'export/android/android_sdk_path = \"/usr/lib/android-sdk\"',
-  'export/android/debug_keystore = \"/root/debug.keystore\"',
-  'export/android/debug_keystore_user = \"androiddebugkey\"',
-  'export/android/debug_keystore_pass = \"android\"',
-]
-open(home + '/.config/godot/editor_settings-4.2.tres', 'w').write('\n'.join(lines))
-print('Settings yazildi')
-"
+          python3 setup_godot.py
 
       - name: Import project
         run: godot --headless --editor --quit 2>&1 || true
 
       - name: Restore settings
-        run: |
-          JAVA_PATH=$(dirname $(dirname $(readlink -f $(which java))))
-          python3 -c "
-import os
-p = os.environ.get('JAVA_PATH', '/usr/lib/jvm/java-17-openjdk-amd64')
-home = os.environ.get('HOME', '/github/home')
-lines = [
-  '[gd_resource type=\"EditorSettings\" format=3]',
-  '',
-  '[resource]',
-  'export/android/java_sdk_path = \"' + p + '\"',
-  'export/android/android_sdk_path = \"/usr/lib/android-sdk\"',
-  'export/android/debug_keystore = \"/root/debug.keystore\"',
-  'export/android/debug_keystore_user = \"androiddebugkey\"',
-  'export/android/debug_keystore_pass = \"android\"',
-]
-open(home + '/.config/godot/editor_settings-4.2.tres', 'w').write('\n'.join(lines))
-print('Settings restore edildi')
-"
+        run: python3 setup_godot.py
 
       - name: Build APK
         run: |
