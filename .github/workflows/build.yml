@@ -17,6 +17,8 @@ jobs:
           export ANDROID_HOME=/usr/lib/android-sdk
           yes | sdkmanager --sdk_root=$ANDROID_HOME "build-tools;33.0.2" "platform-tools" "platforms;android-33" 2>&1 | tail -5
           ls $ANDROID_HOME/build-tools/
+          ln -sf $ANDROID_HOME/build-tools/33.0.2 $ANDROID_HOME/build-tools/33
+          ls $ANDROID_HOME/build-tools/
 
       - name: Setup Godot Editor Settings
         run: |
