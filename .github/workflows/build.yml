@@ -1,62 +1,44 @@
 name: Build Android APK
-
 on:
   push:
-    branches: [main, master]
-  workflow_dispatch:
+    branches: [main]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     container:
       image: barichello/godot-ci:4.2.2
-
     steps:
-      - name: Install Android SDK Components
-        run: |
-          export ANDROID_HOME=/usr/lib/android-sdk
-          yes | sdkmanager --sdk_root=$ANDROID_HOME "build-tools;33.0.2" "platform-tools" "platforms;android-33" 2>&1 | tail -5
-          ls $ANDROID_HOME/build-tools/
-          ln -sf $ANDROID_HOME/build-tools/33.0.2 $ANDROID_HOME/build-tools/33
-          ls $ANDROID_HOME/build-tools/
-
-      - name: Setup Godot Editor Settings
-        run: |
-          mkdir -p $HOME/.config/godot
-          {
-            echo '[gd_resource type="EditorSettings" format=3]'
-            echo ''
-            echo '[resource]'
-            echo 'export/android/android_sdk_path = "/usr/lib/android-sdk"'
-            echo 'export/android/java_sdk_path = "/usr/lib/jvm/java-17-openjdk-amd64"'
-          } > $HOME/.config/godot/editor_settings-4.tres
-          echo "=== SDK kontrol ==="
-          ls /root/android-sdk/build-tools/ || echo "SDK bulunamadi"
       - uses: actions/checkout@v4
 
-      - name: Setup
+      - name: Setup env
         run: |
-          echo "HOME=$HOME"
-          mkdir -p ~/.local/share/godot/export_templates/
           mkdir -p ~/.config/godot
-          mv /root/.local/share/godot/export_templates/4.2.2.stable ~/.local/share/godot/export_templates/4.2.2.stable
-          printf '[gd_resource type="EditorSettings" format=3]\n[resource]\nexport/android/java_sdk_path = "/usr/lib/jvm/java-17-openjdk-amd64"\nexport/android/android_sdk_path = "/usr/lib/android-sdk"\nexport/android/debug_keystore = "/root/debug.keystore"\nexport/android/debug_keystore_user = "androiddebugkey"\nexport/android/debug_keystore_pass = "android"\n' > ~/.config/godot/editor_settings-4.2.tres
-          printf '[gd_resource type="EditorSettings" format=3]\n[resource]\nexport/android/java_sdk_path = "/usr/lib/jvm/java-17-openjdk-amd64"\nexport/android/android_sdk_path = "/usr/lib/android-sdk"\nexport/android/debug_keystore = "/root/debug.keystore"\nexport/android/debug_keystore_user = "androiddebugkey"\nexport/android/debug_keystore_pass = "android"\n' > /root/.config/godot/editor_settings-4.2.tres
-          echo "HOME config:" && cat ~/.config/godot/editor_settings-4.2.tres
+          mkdir -p ~/.local/share/godot/export_templates/4.2.stable
+          cp -rv /root/.local/share/godot/export_templates/4.2.stable/*                  ~/.local/share/godot/export_templates/4.2.stable/ || true
+          cat > ~/.config/godot/editor_settings-4.2.tres << EOF
+[gd_resource type="EditorSettings" format=3]
 
-      - name: Import
+[resource]
+export/android/java_sdk_path = "/usr/lib/jvm/java-17-openjdk-amd64"
+export/android/android_sdk_path = "/usr/lib/android-sdk"
+export/android/debug_keystore = "/root/debug.keystore"
+export/android/debug_keystore_user = "androiddebugkey"
+export/android/debug_keystore_pass = "android"
+export/android/force_system_user = false
+export/android/shutdown_adb_on_exit = true
+EOF
+
+      - name: Import project
         run: godot --headless --editor --quit 2>&1 || true
 
       - name: Build APK
         run: |
           mkdir -p build/android
-          godot --headless --verbose --export-debug "Android" build/android/bridge-builder.apk 2>&1
-          ls -la build/android/ || echo "No APK"
+          godot --headless --verbose --export-debug "Android"                 build/android/bridge-builder.apk 2>&1
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: bridge-builder-apk
-          path: build/android/bridge-builder.apk
-          retention-days: 30
-          if-no-files-found: warn
+          path: build/android/*.apk
+          retention-days: 7
