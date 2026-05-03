@@ -14,10 +14,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup
+      - name: Setup templates and editor config
         run: |
           mkdir -p ~/.local/share/godot/export_templates/
           mv /root/.local/share/godot/export_templates/4.3.stable ~/.local/share/godot/export_templates/4.3.stable
+          mkdir -p ~/.config/godot
+          cat > ~/.config/godot/editor_settings-4.tres << 'SETTINGS'
+[gd_resource type="EditorSettings" format=3]
+[resource]
+export/android/android_sdk_path = "/usr/lib/android-sdk"
+export/android/debug_keystore = "/root/.android/debug.keystore"
+export/android/debug_keystore_user = "androiddebugkey"
+export/android/debug_keystore_pass = "android"
+export/android/java_sdk_path = "/usr/lib/jvm/java-17-openjdk-amd64"
+SETTINGS
+          mkdir -p /root/.android
+          keytool -genkey -v \
+            -keystore /root/.android/debug.keystore \
+            -alias androiddebugkey \
+            -keyalg RSA -keysize 2048 \
+            -validity 10000 \
+            -storepass android \
+            -keypass android \
+            -dname "CN=Android Debug,O=Android,C=US"
 
       - name: Build APK
         run: |
