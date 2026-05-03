@@ -1,63 +1,42 @@
 name: Build Android APK
+
 on:
   push:
-    branches: [main]
+    branches: [main, master]
   workflow_dispatch:
 
 jobs:
-  export-android:
-    runs-on: ubuntu-22.04
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:4.2.2
 
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      - name: Install Godot
+      - name: Setup
         run: |
-          wget -q https://github.com/godotengine/godot/releases/download/4.2.2-stable/Godot_v4.2.2-stable_linux.x86_64.zip
-          unzip -q Godot_v4.2.2-stable_linux.x86_64.zip
-          sudo mv Godot_v4.2.2-stable_linux.x86_64 /usr/local/bin/godot
-
-      - name: Install export templates
-        run: |
-          mkdir -p ~/.local/share/godot/export_templates/4.2.2.stable
-          wget -q https://github.com/godotengine/godot/releases/download/4.2.2-stable/Godot_v4.2.2-stable_export_templates.tpz
-          unzip -q Godot_v4.2.2-stable_export_templates.tpz -d /tmp/templates
-          mv /tmp/templates/templates/* ~/.local/share/godot/export_templates/4.2.2.stable/
-
-      - name: Install Android SDK
-        run: |
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
-          mkdir -p ~/android-sdk/cmdline-tools
-          unzip -q commandlinetools-linux-11076708_latest.zip -d ~/android-sdk/cmdline-tools
-          mv ~/android-sdk/cmdline-tools/cmdline-tools ~/android-sdk/cmdline-tools/latest
-          yes | ~/android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=$HOME/android-sdk --licenses || true
-          ~/android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=$HOME/android-sdk "platform-tools" "build-tools;33.0.2" "platforms;android-33"
-          keytool -genkey -v -keystore ~/debug.keystore -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=Android Debug,O=Android,C=US"
-
-      - name: Setup editor settings
-        run: |
+          mkdir -p ~/.local/share/godot/export_templates/
           mkdir -p ~/.config/godot
-          SETTINGS=~/.config/godot/editor_settings-4.tres
-          echo '[gd_resource type="EditorSettings" format=3]' > $SETTINGS
-          echo '' >> $SETTINGS
-          echo '[resource]' >> $SETTINGS
-          echo "export/android/java_sdk_path = \"$JAVA_HOME\"" >> $SETTINGS
-          echo "export/android/android_sdk_path = \"$HOME/android-sdk\"" >> $SETTINGS
-          echo "export/android/debug_keystore = \"$HOME/debug.keystore\"" >> $SETTINGS
-          echo 'export/android/debug_keystore_user = "androiddebugkey"' >> $SETTINGS
-          echo 'export/android/debug_keystore_pass = "android"' >> $SETTINGS
+          mv /root/.local/share/godot/export_templates/4.2.2.stable ~/.local/share/godot/export_templates/4.2.2.stable
+          find / -name "apksigner" 2>/dev/null
+          find / -name "javac" 2>/dev/null | head -3
+          printf '[gd_resource type="EditorSettings" format=3]\n[resource]\nexport/android/java_sdk_path = "/usr/lib/jvm/java-17-openjdk-amd64"\nexport/android/android_sdk_path = "/usr/lib/android-sdk"\nexport/android/debug_keystore = "/root/debug.keystore"\nexport/android/debug_keystore_user = "androiddebugkey"\nexport/android/debug_keystore_pass = "android"\n' > ~/.config/godot/editor_settings-4.2.tres
+          printf '[gd_resource type="EditorSettings" format=3]\n[resource]\nexport/android/java_sdk_path = "/usr/lib/jvm/java-17-openjdk-amd64"\nexport/android/android_sdk_path = "/usr/lib/android-sdk"\nexport/android/debug_keystore = "/root/debug.keystore"\nexport/android/debug_keystore_user = "androiddebugkey"\nexport/android/debug_keystore_pass = "android"\n' > /root/.config/godot/editor_settings-4.2.tres
 
-      - name: Export APK
+      - name: Import
+        run: godot --headless --editor --quit 2>&1 || true
+
+      - name: Build APK
         run: |
           mkdir -p build/android
-          godot --headless --path $PWD --export-debug "Android" build/android/bridge-builder.apk 2>&1
+          godot --headless --verbose --export-debug "Android" build/android/bridge-builder.apk 2>&1
+          ls -la build/android/ || echo "No APK"
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
         with:
           name: bridge-builder-apk
           path: build/android/bridge-builder.apk
+          retention-days: 30
+          if-no-files-found: warn
