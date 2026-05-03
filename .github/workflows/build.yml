@@ -16,8 +16,12 @@ jobs:
       - name: Install JDK
         run: apt-get update -qq && apt-get install -y -qq openjdk-17-jdk
 
-      - name: Setup
+      - name: Setup SDK and templates
         run: |
+          yes | sdkmanager --licenses || true
+          sdkmanager "platform-tools" "build-tools;33.0.2" "platforms;android-33"
+          ls /usr/lib/android-sdk/build-tools/
+          ls /usr/lib/android-sdk/platform-tools/adb
           mkdir -p $HOME/.config/godot
           mkdir -p $HOME/.local/share/godot/export_templates
           cp -r /root/.local/share/godot/export_templates/* $HOME/.local/share/godot/export_templates/
@@ -30,8 +34,7 @@ jobs:
           echo 'export/android/debug_keystore = "/root/debug.keystore"' >> $SETTINGS
           echo 'export/android/debug_keystore_user = "androiddebugkey"' >> $SETTINGS
           echo 'export/android/debug_keystore_pass = "android"' >> $SETTINGS
-          echo "=== Settings ===" && cat $SETTINGS
-          echo "=== Java ===" && ls /usr/lib/jvm/java-17-openjdk-amd64/bin/javac
+          cat $SETTINGS
 
       - name: Export APK
         run: |
