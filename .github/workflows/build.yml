@@ -12,6 +12,12 @@ jobs:
       image: barichello/godot-ci:4.2.2
 
     steps:
+      - name: Install Android SDK Components
+        run: |
+          export ANDROID_HOME=/usr/lib/android-sdk
+          yes | sdkmanager --sdk_root=$ANDROID_HOME "build-tools;33.0.2" "platform-tools" "platforms;android-33" 2>&1 | tail -5
+          ls $ANDROID_HOME/build-tools/
+
       - name: Setup Godot Editor Settings
         run: |
           mkdir -p $HOME/.config/godot
@@ -19,7 +25,7 @@ jobs:
             echo '[gd_resource type="EditorSettings" format=3]'
             echo ''
             echo '[resource]'
-            echo 'export/android/android_sdk_path = "/root/android-sdk"'
+            echo 'export/android/android_sdk_path = "/usr/lib/android-sdk"'
             echo 'export/android/java_sdk_path = "/usr/lib/jvm/java-17-openjdk-amd64"'
           } > $HOME/.config/godot/editor_settings-4.tres
           echo "=== SDK kontrol ==="
@@ -32,8 +38,8 @@ jobs:
           mkdir -p ~/.local/share/godot/export_templates/
           mkdir -p ~/.config/godot
           mv /root/.local/share/godot/export_templates/4.2.2.stable ~/.local/share/godot/export_templates/4.2.2.stable
-          printf '[gd_resource type="EditorSettings" format=3]\n[resource]\nexport/android/java_sdk_path = "/usr/lib/jvm/java-17-openjdk-amd64"\nexport/android/android_sdk_path = "/root/android-sdk"\nexport/android/debug_keystore = "/root/debug.keystore"\nexport/android/debug_keystore_user = "androiddebugkey"\nexport/android/debug_keystore_pass = "android"\n' > ~/.config/godot/editor_settings-4.2.tres
-          printf '[gd_resource type="EditorSettings" format=3]\n[resource]\nexport/android/java_sdk_path = "/usr/lib/jvm/java-17-openjdk-amd64"\nexport/android/android_sdk_path = "/root/android-sdk"\nexport/android/debug_keystore = "/root/debug.keystore"\nexport/android/debug_keystore_user = "androiddebugkey"\nexport/android/debug_keystore_pass = "android"\n' > /root/.config/godot/editor_settings-4.2.tres
+          printf '[gd_resource type="EditorSettings" format=3]\n[resource]\nexport/android/java_sdk_path = "/usr/lib/jvm/java-17-openjdk-amd64"\nexport/android/android_sdk_path = "/usr/lib/android-sdk"\nexport/android/debug_keystore = "/root/debug.keystore"\nexport/android/debug_keystore_user = "androiddebugkey"\nexport/android/debug_keystore_pass = "android"\n' > ~/.config/godot/editor_settings-4.2.tres
+          printf '[gd_resource type="EditorSettings" format=3]\n[resource]\nexport/android/java_sdk_path = "/usr/lib/jvm/java-17-openjdk-amd64"\nexport/android/android_sdk_path = "/usr/lib/android-sdk"\nexport/android/debug_keystore = "/root/debug.keystore"\nexport/android/debug_keystore_user = "androiddebugkey"\nexport/android/debug_keystore_pass = "android"\n' > /root/.config/godot/editor_settings-4.2.tres
           echo "HOME config:" && cat ~/.config/godot/editor_settings-4.2.tres
 
       - name: Import
