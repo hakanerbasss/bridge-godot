@@ -31,22 +31,27 @@ jobs:
 
       - name: Install Android template
         run: |
-          mkdir -p android/build
-          cp ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/android_source.zip android/build/
-          cd android/build && unzip -q android_source.zip && rm android_source.zip
-          mkdir -p android && echo "installed" > android/.build_version
+          mkdir -p android
+          cp ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/android_source.zip android/
+          cd android && unzip -q android_source.zip && rm android_source.zip
+          echo "installed" > .build_version
+
+      - name: Export PCK
+        run: |
+          godot --headless --export-pack "Android" android/assets/bridge-builder.pck 2>&1 || true
+          ls -la android/assets/ || true
 
       - name: Build with Gradle
         run: |
-          cd android/build
+          cd android
           chmod +x gradlew
           ./gradlew assembleDebug
-          find . -name "*.apk" | head -5
+          find . -name "*.apk"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: bridge-builder-apk
-          path: android/build/build/outputs/apk/debug/*.apk
+          path: android/build/outputs/apk/debug/*.apk
           retention-days: 30
           if-no-files-found: warn
