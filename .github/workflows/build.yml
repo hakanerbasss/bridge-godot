@@ -14,20 +14,13 @@ jobs:
       - name: Setup env
         run: |
           JAVA_PATH=$(dirname $(dirname $(readlink -f $(which java))))
+          echo "Java: $JAVA_PATH"
           mkdir -p $HOME/.local/share/godot/export_templates/4.2.2.stable
           cp -r /root/.local/share/godot/export_templates/4.2.2.stable/* $HOME/.local/share/godot/export_templates/4.2.2.stable/ || true
           mkdir -p $HOME/.config/godot
           printf '[gd_resource type="EditorSettings" format=3]\n\n[resource]\nexport/android/java_sdk_path = "%s"\nexport/android/android_sdk_path = "/usr/lib/android-sdk"\nexport/android/debug_keystore = "/root/debug.keystore"\nexport/android/debug_keystore_user = "androiddebugkey"\nexport/android/debug_keystore_pass = "android"\n' "$JAVA_PATH" > $HOME/.config/godot/editor_settings-4.2.tres
+          chmod 444 $HOME/.config/godot/editor_settings-4.2.tres
           cat $HOME/.config/godot/editor_settings-4.2.tres
-
-      - name: Import project
-        run: godot --headless --editor --quit 2>&1 || true
-
-      - name: Restore settings
-        run: |
-          JAVA_PATH=$(dirname $(dirname $(readlink -f $(which java))))
-          mkdir -p $HOME/.config/godot
-          printf '[gd_resource type="EditorSettings" format=3]\n\n[resource]\nexport/android/java_sdk_path = "%s"\nexport/android/android_sdk_path = "/usr/lib/android-sdk"\nexport/android/debug_keystore = "/root/debug.keystore"\nexport/android/debug_keystore_user = "androiddebugkey"\nexport/android/debug_keystore_pass = "android"\n' "$JAVA_PATH" > $HOME/.config/godot/editor_settings-4.2.tres
 
       - name: Build APK
         run: |
