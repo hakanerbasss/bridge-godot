@@ -34,7 +34,7 @@ jobs:
           mkdir -p android/build
           cp ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/android_source.zip android/build/
           cd android/build && unzip -q android_source.zip && rm android_source.zip
-          echo "installed" > android/.build_version
+          mkdir -p android && echo "installed" > android/.build_version
 
       - name: Build with Gradle
         run: |
