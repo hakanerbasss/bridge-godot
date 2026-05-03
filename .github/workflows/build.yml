@@ -29,7 +29,7 @@ jobs:
 
       - name: Build APK
         run: |
-          mkdir -p build/android
+          echo "SDK:" && ls /usr/lib/android-sdk/build-tools/ && echo "ANDROID_HOME:" && echo $ANDROID_HOME && mkdir -p build/android
           godot --headless --verbose \
             --export-debug "Android" \
             build/android/bridge-builder.apk > /tmp/godot_log.txt 2>&1 || true
